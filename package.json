@@ -1,0 +1,70 @@
+{
+  "name": "@ort-fe/storage-manager",
+  "version": "1.0.0",
+  "description": "Unified client-side storage manager with expiration control",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "storage",
+    "localStorage",
+    "sessionStorage",
+    "cookie",
+    "memory-storage",
+    "browser-storage",
+    "cache",
+    "expiration",
+    "typescript",
+    "async",
+    "encryption",
+    "namespace"
+  ],
+  "author": "hopebearer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hopebearer/storage-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hopebearer/storage-manager/issues"
+  },
+  "homepage": "https://github.com/hopebearer/storage-manager#readme",
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.0",
+    "vitest": "^1.2.0",
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
