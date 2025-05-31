@@ -38,6 +38,32 @@ yarn add @ort-fe/unified-cache
 pnpm add @ort-fe/unified-cache
 ```
 
+### 直接在浏览器中使用（CDN）
+
+你也可以通过CDN直接在浏览器中使用：
+
+```html
+<!-- 使用unpkg -->
+<script src="https://unpkg.com/@ort-fe/unified-cache"></script>
+
+<!-- 或使用jsdelivr -->
+<script src="https://cdn.jsdelivr.net/npm/@ort-fe/unified-cache"></script>
+
+<script>
+  // 全局变量 UnifiedCache 可用
+  const { put, get, del } = UnifiedCache;
+  
+  // 使用库
+  async function example() {
+    await put('user', { name: 'John' });
+    const user = await get('user');
+    console.log(user); // { name: 'John' }
+  }
+  
+  example();
+</script>
+```
+
 ## 快速开始
 
 ### 简化API（推荐）
