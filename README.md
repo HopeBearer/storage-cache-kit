@@ -1,6 +1,6 @@
-# Storage Manager
+# Unified Cache
 
-一个用于统一管理各种类型客户端存储的轻量级库。支持浏览器和Node.js环境。
+一个用于统一管理各种类型客户端存储和缓存的轻量级库。支持浏览器和Node.js环境。
 
 ## 目录
 
@@ -29,13 +29,13 @@
 
 ```bash
 # 使用npm
-npm install @ort-fe/storage-manager
+npm install @ort-fe/unified-cache
 
 # 使用yarn
-yarn add @ort-fe/storage-manager
+yarn add @ort-fe/unified-cache
 
 # 使用pnpm
-pnpm add @ort-fe/storage-manager
+pnpm add @ort-fe/unified-cache
 ```
 
 ## 快速开始
@@ -43,7 +43,7 @@ pnpm add @ort-fe/storage-manager
 ### 简化API（推荐）
 
 ```typescript
-import { put, get, del } from '@ort-fe/storage-manager';
+import { put, get, del } from '@ort-fe/unified-cache';
 
 // 存储数据
 await put('user', { id: 1, name: 'John' });
@@ -59,7 +59,7 @@ await del('user');
 ### 完整API
 
 ```typescript
-import storageManager from '@ort-fe/storage-manager';
+import storageManager from '@ort-fe/unified-cache';
 
 // 存储数据
 await storageManager.set('user', { id: 1, name: 'John' });
@@ -73,14 +73,14 @@ await storageManager.remove('user');
 
 ## 浏览器环境使用指南
 
-在浏览器环境中，Storage Manager支持多种存储方式，包括localStorage、sessionStorage、cookie和内存存储。
+在浏览器环境中，Unified Cache支持多种存储方式，包括localStorage、sessionStorage、cookie和内存存储。
 
 ### 默认存储（localStorage）
 
-默认情况下，Storage Manager使用localStorage作为存储方式：
+默认情况下，Unified Cache使用localStorage作为存储方式：
 
 ```typescript
-import { store } from '@ort-fe/storage-manager';
+import { store } from '@ort-fe/unified-cache';
 
 // 使用localStorage存储
 await store.put('preferences', { theme: 'dark', fontSize: 16 });
@@ -90,7 +90,7 @@ const preferences = await store.get('preferences');
 ### 使用不同存储适配器
 
 ```typescript
-import { store, ADAPTER_TYPES } from '@ort-fe/storage-manager';
+import { store, ADAPTER_TYPES } from '@ort-fe/unified-cache';
 
 // 使用sessionStorage（会话存储，浏览器关闭后数据消失）
 await store.put('temporaryData', { id: 123 }, { 
@@ -112,7 +112,7 @@ await store.put('pageState', { scrollPosition: 350 }, {
 ### 设置数据过期时间
 
 ```typescript
-import { store } from '@ort-fe/storage-manager';
+import { store } from '@ort-fe/unified-cache';
 
 // 设置1小时后过期
 await store.put('sessionToken', 'abc123', { 
@@ -130,7 +130,7 @@ await store.put('verificationCode', '123456', {
 当使用Cookie存储时，可以通过创建自定义实例来设置更多Cookie相关选项：
 
 ```typescript
-import { SimpleStore, ADAPTER_TYPES } from '@ort-fe/storage-manager';
+import { SimpleStore, ADAPTER_TYPES } from '@ort-fe/unified-cache';
 
 const cookieStore = new SimpleStore({
   defaultAdapter: ADAPTER_TYPES.COOKIE,
@@ -138,8 +138,8 @@ const cookieStore = new SimpleStore({
 });
 
 // 使用自定义Cookie存储适配器
-import { CookieStorageAdapter } from '@ort-fe/storage-manager';
-import { StorageManager } from '@ort-fe/storage-manager';
+import { CookieStorageAdapter } from '@ort-fe/unified-cache';
+import { StorageManager } from '@ort-fe/unified-cache';
 
 const cookieAdapter = new CookieStorageAdapter({
   path: '/app',
@@ -157,12 +157,12 @@ await manager.set('sensitiveData', { userId: 12345 }, { adapter: 'secureCookie' 
 
 ## Node.js环境使用指南
 
-在Node.js环境中，Storage Manager会自动检测环境并默认使用内存存储适配器。
+在Node.js环境中，Unified Cache会自动检测环境并默认使用内存存储适配器。
 
 ### 基本用法
 
 ```typescript
-import { store } from '@ort-fe/storage-manager';
+import { store } from '@ort-fe/unified-cache';
 
 // 在Node.js中，自动使用内存存储
 await store.put('serverConfig', { port: 3000, debug: true });
@@ -201,7 +201,7 @@ Node.js环境中的内存存储适合以下场景：
 使用命名空间可以隔离不同模块或功能的存储数据：
 
 ```typescript
-import { SimpleStore } from '@ort-fe/storage-manager';
+import { SimpleStore } from '@ort-fe/unified-cache';
 
 const userStore = new SimpleStore({ namespace: 'user' });
 const settingsStore = new SimpleStore({ namespace: 'settings' });
@@ -220,7 +220,7 @@ const settingsProfile = await settingsStore.get('profile'); // { darkMode: true 
 启用加密功能可以保护敏感数据：
 
 ```typescript
-import { SimpleStore } from '@ort-fe/storage-manager';
+import { SimpleStore } from '@ort-fe/unified-cache';
 
 const secureStore = new SimpleStore({
   defaultEncrypt: true // 启用加密
@@ -233,7 +233,7 @@ await secureStore.put('creditCard', { number: '1234-5678-9012-3456', cvv: '123' 
 ### 批量操作
 
 ```typescript
-import { store } from '@ort-fe/storage-manager';
+import { store } from '@ort-fe/unified-cache';
 
 // 批量存储
 const data = {
@@ -260,7 +260,7 @@ await Promise.all(keys.map(key => store.del(key)));
 你可以创建并注册自己的存储适配器：
 
 ```typescript
-import { StorageAdapter, StorageItem, StorageManager } from '@ort-fe/storage-manager';
+import { StorageAdapter, StorageItem, StorageManager } from '@ort-fe/unified-cache';
 
 // 创建自定义适配器
 class MyCustomAdapter implements StorageAdapter {
@@ -420,7 +420,7 @@ try {
 // 文件系统适配器示例概念
 import fs from 'fs';
 import path from 'path';
-import { StorageAdapter, StorageItem } from '@ort-fe/storage-manager';
+import { StorageAdapter, StorageItem } from '@ort-fe/unified-cache';
 
 class FileSystemAdapter implements StorageAdapter {
   private basePath: string;
@@ -465,7 +465,7 @@ await manager.set('config', { port: 3000 }, { adapter: 'file' });
 
 #### 浏览器兼容性
 
-Storage Manager库支持以下现代浏览器：
+Unified Cache库支持以下现代浏览器：
 
 | 浏览器 | 最低支持版本 |
 |-------|------------|
