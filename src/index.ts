@@ -7,8 +7,6 @@ export * from './adapters';
 // 导出类型
 export * from './types';
 
-// 导出组合式API
-export * from './utils/useStorage';
 
 // 创建默认存储管理器实例
 import { SimpleStore } from './core';
