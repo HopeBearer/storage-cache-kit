@@ -175,12 +175,12 @@ await store.put('data', { value: 123 }, { adapter: 'LOCAL' }); // 使用localSto
 
 支持的字符串映射包括：
 
-| 字符串名称 | 对应适配器 | 别名 |
-|------------|------------|------|
-| `'localStorage'` | `ADAPTER_TYPES.LOCAL_STORAGE` | `'local'` |
-| `'sessionStorage'` | `ADAPTER_TYPES.SESSION_STORAGE` | `'session'` |
-| `'cookie'` | `ADAPTER_TYPES.COOKIE` | `'cookies'` |
-| `'memory'` | `ADAPTER_TYPES.MEMORY` | `'mem'` |
+| 字符串名称 | 对应适配器 |
+|------------|------------|
+| `'localStorage'` | `ADAPTER_TYPES.LOCAL_STORAGE` |
+| `'sessionStorage'` | `ADAPTER_TYPES.SESSION_STORAGE` |
+| `'cookie'` | `ADAPTER_TYPES.COOKIE` |
+| `'memory'` | `ADAPTER_TYPES.MEMORY` |
 
 ### 设置数据过期时间
 
