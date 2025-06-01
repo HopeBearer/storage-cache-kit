@@ -25,3 +25,9 @@ dist-ssr
 
 # 内部开发文档
 PUBLISHING.md
+
+# 测试目录
+test-browser/
+test-string-adapter/
+test-project/
+test-examples/

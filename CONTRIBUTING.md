@@ -1,13 +1,13 @@
 # 贡献指南
 
-感谢你对 `@ort-fe/unified-cache` 的贡献兴趣！我们欢迎各种形式的贡献，包括但不限于功能请求、bug报告、文档改进、代码贡献等。
+感谢你对 `@ort-fe/storage-cache-kit` 的贡献兴趣！我们欢迎各种形式的贡献，包括但不限于功能请求、bug报告、文档改进、代码贡献等。
 
 ## 开发环境设置
 
 1. 克隆仓库
    ```bash
-   git clone https://github.com/hopebearer/unified-cache.git
-   cd unified-cache
+   git clone https://github.com/hopebearer/storage-cache-kit.git
+   cd storage-cache-kit
    ```
 
 2. 安装依赖

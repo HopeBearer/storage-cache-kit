@@ -1,5 +1,5 @@
 import type { StorageAdapter, StorageItem } from '../types';
-import { serializeItem, deserializeItem } from '../utils';
+import { serializeItem, parseStorageItem } from '../utils';
 
 /**
  * 内存存储适配器
@@ -41,7 +41,9 @@ export class MemoryStorageAdapter implements StorageAdapter {
     try {
       const data = this.storage.get(key);
       if (!data) return undefined;
-      return deserializeItem<T>(data, this.encrypt);
+      
+      // 使用通用函数处理标准和非标准格式
+      return parseStorageItem<T>(data, this.encrypt);
     } catch (error) {
       console.error(`Failed to get item '${key}':`, error);
       return undefined;

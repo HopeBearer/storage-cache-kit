@@ -1,5 +1,31 @@
 import type { StorageAdapter, StorageItem } from '../types';
-import { serializeItem, deserializeItem } from '../utils';
+import { serializeItem, parseStorageItem } from '../utils';
+import { warnOnce } from '../utils/environment';
+
+// 检查 cookie 是否可用
+function isCookieAvailable(): boolean {
+  try {
+    if (typeof document === 'undefined' || typeof document.cookie === 'undefined') {
+      return false;
+    }
+    
+    // 测试 cookie 是否可写
+    const testKey = '__test_cookie__';
+    const testValue = 'test';
+    const now = new Date();
+    now.setTime(now.getTime() + 1000); // 1秒后过期
+    
+    document.cookie = `${testKey}=${testValue}; expires=${now.toUTCString()}; path=/`;
+    const success = document.cookie.indexOf(testKey) !== -1;
+    
+    // 立即删除测试 cookie
+    document.cookie = `${testKey}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    
+    return success;
+  } catch (e) {
+    return false;
+  }
+}
 
 /**
  * Cookie存储适配器
@@ -11,6 +37,7 @@ export class CookieStorageAdapter implements StorageAdapter {
   private readonly domain?: string;
   private readonly secure: boolean;
   private readonly sameSite: 'strict' | 'lax' | 'none';
+  private readonly available: boolean;
 
   /**
    * 创建Cookie存储适配器
@@ -30,6 +57,11 @@ export class CookieStorageAdapter implements StorageAdapter {
     this.domain = options.domain;
     this.secure = options.secure || false;
     this.sameSite = options.sameSite || 'lax';
+    this.available = isCookieAvailable();
+    
+    if (!this.available) {
+      warnOnce('Cookie is not available in this environment.');
+    }
   }
 
   /**
@@ -38,6 +70,10 @@ export class CookieStorageAdapter implements StorageAdapter {
    * @param item 存储项
    */
   async setItem<T>(key: string, item: StorageItem<T>): Promise<void> {
+    if (!this.available) {
+      throw new Error('Cookie is not available in this environment');
+    }
+    
     try {
       const serialized = serializeItem(item, this.encrypt);
       
@@ -60,9 +96,7 @@ export class CookieStorageAdapter implements StorageAdapter {
       cookieStr += `; samesite=${this.sameSite}`;
       
       // 设置cookie
-      if (typeof document !== 'undefined') {
-        document.cookie = cookieStr;
-      }
+      document.cookie = cookieStr;
     } catch (error) {
       console.error(`Failed to set cookie '${key}':`, error);
       throw new Error(`Failed to set cookie '${key}'`);
@@ -75,9 +109,11 @@ export class CookieStorageAdapter implements StorageAdapter {
    * @returns 存储项或undefined（如果不存在）
    */
   async getItem<T>(key: string): Promise<StorageItem<T> | undefined> {
+    if (!this.available) {
+      throw new Error('Cookie is not available in this environment');
+    }
+    
     try {
-      if (typeof document === 'undefined') return undefined;
-      
       const cookies = document.cookie.split(';');
       const encodedKey = encodeURIComponent(key);
       
@@ -86,7 +122,9 @@ export class CookieStorageAdapter implements StorageAdapter {
         
         if (cookieKey === encodedKey && cookieValue) {
           const decodedValue = decodeURIComponent(cookieValue);
-          return deserializeItem<T>(decodedValue, this.encrypt);
+          
+          // 使用通用函数处理标准和非标准格式
+          return parseStorageItem<T>(decodedValue, this.encrypt);
         }
       }
       
@@ -102,7 +140,9 @@ export class CookieStorageAdapter implements StorageAdapter {
    * @param key 键名
    */
   async removeItem(key: string): Promise<void> {
-    if (typeof document === 'undefined') return;
+    if (!this.available) {
+      throw new Error('Cookie is not available in this environment');
+    }
     
     // 设置过期时间为过去，即删除cookie
     document.cookie = `${encodeURIComponent(key)}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${this.path}`;
@@ -117,7 +157,9 @@ export class CookieStorageAdapter implements StorageAdapter {
    * 注意：只能清除当前域下的cookie，且受路径限制
    */
   async clear(): Promise<void> {
-    if (typeof document === 'undefined') return;
+    if (!this.available) {
+      throw new Error('Cookie is not available in this environment');
+    }
     
     const cookies = document.cookie.split(';');
     
@@ -132,7 +174,9 @@ export class CookieStorageAdapter implements StorageAdapter {
    * @returns 键名数组
    */
   async keys(): Promise<string[]> {
-    if (typeof document === 'undefined') return [];
+    if (!this.available) {
+      throw new Error('Cookie is not available in this environment');
+    }
     
     const cookies = document.cookie.split(';');
     const keys: string[] = [];

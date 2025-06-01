@@ -23,7 +23,7 @@ export class SimpleStore {
    * @param value 值
    * @param options 选项
    */
-  async put<T>(key: string, value: T, options?: { expires?: number; adapter?: AdapterType }): Promise<void> {
+  async put<T>(key: string, value: T, options?: { expires?: number; adapter?: AdapterType | string }): Promise<void> {
     return this.manager.set(key, value, options);
   }
 
@@ -32,7 +32,7 @@ export class SimpleStore {
    * @param key 键名
    * @param options 选项
    */
-  async get<T>(key: string, options?: { adapter?: AdapterType }): Promise<T | undefined> {
+  async get<T>(key: string, options?: { adapter?: AdapterType | string }): Promise<T | undefined> {
     return this.manager.get(key, options);
   }
 
@@ -41,7 +41,7 @@ export class SimpleStore {
    * @param key 键名
    * @param options 选项
    */
-  async del(key: string, options?: { adapter?: AdapterType }): Promise<void> {
+  async del(key: string, options?: { adapter?: AdapterType | string }): Promise<void> {
     return this.manager.remove(key, options);
   }
 
@@ -50,7 +50,7 @@ export class SimpleStore {
    * @param key 键名
    * @param options 选项
    */
-  async has(key: string, options?: { adapter?: AdapterType }): Promise<boolean> {
+  async has(key: string, options?: { adapter?: AdapterType | string }): Promise<boolean> {
     return this.manager.has(key, options);
   }
 
@@ -58,7 +58,7 @@ export class SimpleStore {
    * 获取所有键名
    * @param options 选项
    */
-  async keys(options?: { adapter?: AdapterType }): Promise<string[]> {
+  async keys(options?: { adapter?: AdapterType | string }): Promise<string[]> {
     return this.manager.keys(options);
   }
 
@@ -66,7 +66,7 @@ export class SimpleStore {
    * 清空存储
    * @param options 选项
    */
-  async clear(options?: { adapter?: AdapterType }): Promise<void> {
+  async clear(options?: { adapter?: AdapterType | string }): Promise<void> {
     return this.manager.clear(options);
   }
 
@@ -76,5 +76,13 @@ export class SimpleStore {
    */
   getManager(): StorageManager {
     return this.manager;
+  }
+
+  /**
+   * 调试方法：获取所有已注册的适配器
+   * 仅在开发环境中使用
+   */
+  getRegisteredAdapters(): string[] {
+    return Array.from(this.manager["adapters"].keys());
   }
 } 

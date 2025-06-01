@@ -19,12 +19,40 @@ import {
   ADAPTER_TYPES
 } from '../adapters'
 import type { AdapterType } from '../adapters'
+import { warnOnce } from '../utils/environment'
 
 /**
  * 扩展的存储项选项
  */
 interface ExtendedStorageItemOptions extends StorageItemOptions {
-  adapter?: AdapterType
+  adapter?: AdapterType | string
+}
+
+/**
+ * 安全地检查是否为开发环境
+ * 同时兼容Node.js和浏览器环境
+ */
+function isDevelopment(): boolean {
+  try {
+    // Node.js 环境
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env.NODE_ENV === 'development';
+    }
+    // 浏览器环境
+    return false; // 在浏览器中默认不开启调试日志
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * 安全地输出调试日志
+ * 同时兼容Node.js和浏览器环境
+ */
+function debugLog(...args: any[]): void {
+  if (isDevelopment()) {
+    console.debug(...args);
+  }
 }
 
 /**
@@ -48,45 +76,135 @@ export class StorageManager {
     const isBrowser = isBrowserEnvironment() || isTest // 在测试环境中也当作浏览器环境处理
 
     // 确定默认适配器
-    const defaultAdapter =
-      !isBrowser || isNode
+    let defaultAdapter: string;
+    
+    if (typeof options.defaultAdapter === 'string') {
+      defaultAdapter = this.mapAdapterString(options.defaultAdapter);
+    } else {
+      defaultAdapter = !isBrowser || isNode
         ? ADAPTER_TYPES.MEMORY
-        : options.defaultAdapter || ADAPTER_TYPES.LOCAL_STORAGE
+        : options.defaultAdapter || ADAPTER_TYPES.LOCAL_STORAGE;
+    }
 
+    // 创建选项对象，处理默认值
+    const optionsCopy = { ...options };
+    
+    // 避免重复设置 defaultAdapter
+    delete optionsCopy.defaultAdapter;
+    
     this.options = {
       defaultAdapter: defaultAdapter as AdapterType,
       defaultExpires: 0, // 默认不过期
       defaultEncrypt: false,
       namespace: '',
-      ...options
+      ...optionsCopy
     } as Required<StorageManagerOptions> & { defaultAdapter: AdapterType }
 
-    // 注册默认适配器
-    // 在纯Node环境中，只注册内存存储适配器
-    if (isNode && !isTest) {
-      this.registerAdapter(
-        ADAPTER_TYPES.MEMORY,
-        new MemoryStorageAdapter(this.options.defaultEncrypt)
-      )
-    } else {
-      // 浏览器环境或测试环境，注册所有适配器
-      this.registerAdapter(
-        ADAPTER_TYPES.LOCAL_STORAGE,
-        new LocalStorageAdapter(this.options.defaultEncrypt)
-      )
-      this.registerAdapter(
-        ADAPTER_TYPES.SESSION_STORAGE,
-        new SessionStorageAdapter(this.options.defaultEncrypt)
-      )
-      this.registerAdapter(
-        ADAPTER_TYPES.MEMORY,
-        new MemoryStorageAdapter(this.options.defaultEncrypt)
-      )
-      this.registerAdapter(
-        ADAPTER_TYPES.COOKIE,
-        new CookieStorageAdapter({ encrypt: this.options.defaultEncrypt })
-      )
+    // 注册所有适配器，让适配器自己决定是否可用
+    this.registerAdapters();
+
+    // 调试日志
+    debugLog('Registered adapters:', Array.from(this.adapters.keys()));
+    
+    // 验证默认适配器是否可用
+    if (!this.adapters.has(this.options.defaultAdapter.toLowerCase())) {
+      // 默认适配器不可用，切换到内存适配器
+      warnOnce(`Default adapter '${this.options.defaultAdapter}' is not available, falling back to memory adapter.`);
+      this.options.defaultAdapter = ADAPTER_TYPES.MEMORY;
     }
+  }
+  
+  /**
+   * 注册所有适配器
+   * @private
+   */
+  private registerAdapters(): void {
+    // 注册内存存储适配器（这个应该总是可用的）
+    const memoryAdapter = new MemoryStorageAdapter(this.options.defaultEncrypt);
+    this.registerAdapterWithAliases(ADAPTER_TYPES.MEMORY, memoryAdapter, ['memory', 'mem']);
+    
+    // 尝试注册 localStorage 适配器
+    try {
+      const localStorageAdapter = new LocalStorageAdapter(this.options.defaultEncrypt);
+      this.registerAdapterWithAliases(
+        ADAPTER_TYPES.LOCAL_STORAGE, 
+        localStorageAdapter, 
+        ['localStorage', 'local', 'localstorage']
+      );
+    } catch (error: unknown) {
+      debugLog('localStorage adapter registration failed:', error instanceof Error ? error.message : String(error));
+    }
+    
+    // 尝试注册 sessionStorage 适配器
+    try {
+      const sessionStorageAdapter = new SessionStorageAdapter(this.options.defaultEncrypt);
+      this.registerAdapterWithAliases(
+        ADAPTER_TYPES.SESSION_STORAGE, 
+        sessionStorageAdapter, 
+        ['sessionStorage', 'session', 'sessionstorage']
+      );
+    } catch (error: unknown) {
+      debugLog('sessionStorage adapter registration failed:', error instanceof Error ? error.message : String(error));
+    }
+    
+    // 尝试注册 cookie 适配器
+    try {
+      const cookieAdapter = new CookieStorageAdapter({ encrypt: this.options.defaultEncrypt });
+      this.registerAdapterWithAliases(
+        ADAPTER_TYPES.COOKIE, 
+        cookieAdapter, 
+        ['cookie', 'cookies']
+      );
+    } catch (error: unknown) {
+      debugLog('cookie adapter registration failed:', error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  /**
+   * 注册适配器及其别名
+   * @private
+   * @param primaryName 主要名称
+   * @param adapter 适配器实例
+   * @param aliases 别名数组
+   */
+  private registerAdapterWithAliases(primaryName: string, adapter: StorageAdapter, aliases: string[]): void {
+    // 注册主要名称（确保使用小写）
+    const lowerPrimaryName = primaryName.toLowerCase();
+    this.adapters.set(lowerPrimaryName, adapter);
+    
+    // 注册所有别名（使用小写以确保大小写不敏感）
+    for (const alias of aliases) {
+      const lowerAlias = alias.toLowerCase();
+      if (lowerAlias !== lowerPrimaryName) { // 避免重复注册
+        this.adapters.set(lowerAlias, adapter);
+      }
+    }
+    
+    // 调试日志
+    debugLog(`Registered adapter '${primaryName}' with aliases:`, aliases);
+  }
+
+  /**
+   * 映射适配器字符串到适配器类型
+   * @private
+   */
+  private mapAdapterString(adapter: string): string {
+    if (!adapter) return ADAPTER_TYPES.MEMORY;
+    
+    // 确保大小写不敏感的映射
+    const lowerAdapter = adapter.toLowerCase();
+    const adapterMap: Record<string, string> = {
+      'localstorage': ADAPTER_TYPES.LOCAL_STORAGE,
+      'local': ADAPTER_TYPES.LOCAL_STORAGE,
+      'sessionstorage': ADAPTER_TYPES.SESSION_STORAGE,
+      'session': ADAPTER_TYPES.SESSION_STORAGE,
+      'cookie': ADAPTER_TYPES.COOKIE,
+      'cookies': ADAPTER_TYPES.COOKIE,
+      'memory': ADAPTER_TYPES.MEMORY,
+      'mem': ADAPTER_TYPES.MEMORY,
+    };
+    
+    return adapterMap[lowerAdapter] || adapter;
   }
 
   /**
@@ -95,7 +213,8 @@ export class StorageManager {
    * @param adapter 适配器实例
    */
   registerAdapter(name: string, adapter: StorageAdapter): void {
-    this.adapters.set(name, adapter)
+    // 始终使用小写存储适配器名称，确保大小写不敏感
+    this.adapters.set(name.toLowerCase(), adapter)
   }
 
   /**
@@ -104,11 +223,23 @@ export class StorageManager {
    * @returns 适配器实例
    */
   getAdapter(name: string = this.options.defaultAdapter): StorageAdapter {
-    const adapter = this.adapters.get(name)
-    if (!adapter) {
-      throw new Error(`Adapter '${name}' not found`)
+    if (!name) {
+      name = this.options.defaultAdapter;
     }
-    return adapter
+    
+    // 映射字符串名称
+    const mappedName = this.mapAdapterString(name);
+    const lowerMappedName = mappedName.toLowerCase();
+    
+    // 使用小写名称查找适配器，确保大小写不敏感
+    const adapter = this.adapters.get(lowerMappedName);
+    if (!adapter) {
+      // 调试信息：输出所有已注册的适配器名称
+      debugLog('Available adapters:', Array.from(this.adapters.keys()));
+      debugLog('Requested adapter:', name, 'Mapped to:', lowerMappedName);
+      throw new Error(`Adapter '${name}' not found`);
+    }
+    return adapter;
   }
 
   /**
@@ -124,7 +255,15 @@ export class StorageManager {
     options: ExtendedStorageItemOptions = {}
   ): Promise<void> {
     const { expires = this.options.defaultExpires } = options
-    const adapterName = options.adapter || this.options.defaultAdapter
+    
+    // 处理适配器名称
+    let adapterName: string;
+    if (options.adapter) {
+      adapterName = this.mapAdapterString(options.adapter as string);
+    } else {
+      adapterName = this.options.defaultAdapter;
+    }
+    
     const adapter = this.getAdapter(adapterName)
     const namespacedKey = namespaceKey(key, this.options.namespace)
 
@@ -147,7 +286,14 @@ export class StorageManager {
     key: string,
     options: Partial<ExtendedStorageItemOptions> = {}
   ): Promise<T | undefined> {
-    const adapterName = options.adapter || this.options.defaultAdapter
+    // 处理适配器名称
+    let adapterName: string;
+    if (options.adapter) {
+      adapterName = this.mapAdapterString(options.adapter as string);
+    } else {
+      adapterName = this.options.defaultAdapter;
+    }
+    
     const adapter = this.getAdapter(adapterName)
     const namespacedKey = namespaceKey(key, this.options.namespace)
 
@@ -171,9 +317,16 @@ export class StorageManager {
    */
   async remove(
     key: string,
-    options: { adapter?: AdapterType } = {}
+    options: { adapter?: AdapterType | string } = {}
   ): Promise<void> {
-    const adapterName = options.adapter || this.options.defaultAdapter
+    // 处理适配器名称
+    let adapterName: string;
+    if (options.adapter) {
+      adapterName = this.mapAdapterString(options.adapter as string);
+    } else {
+      adapterName = this.options.defaultAdapter;
+    }
+    
     const adapter = this.getAdapter(adapterName)
     const namespacedKey = namespaceKey(key, this.options.namespace)
     await adapter.removeItem(namespacedKey)
@@ -184,8 +337,15 @@ export class StorageManager {
    * @param options 选项
    * @returns Promise
    */
-  async clear(options: { adapter?: AdapterType } = {}): Promise<void> {
-    const adapterName = options.adapter || this.options.defaultAdapter
+  async clear(options: { adapter?: AdapterType | string } = {}): Promise<void> {
+    // 处理适配器名称
+    let adapterName: string;
+    if (options.adapter) {
+      adapterName = this.mapAdapterString(options.adapter as string);
+    } else {
+      adapterName = this.options.defaultAdapter;
+    }
+    
     const adapter = this.getAdapter(adapterName)
     await adapter.clear()
   }
@@ -195,8 +355,15 @@ export class StorageManager {
    * @param options 选项
    * @returns 键名数组
    */
-  async keys(options: { adapter?: AdapterType } = {}): Promise<string[]> {
-    const adapterName = options.adapter || this.options.defaultAdapter
+  async keys(options: { adapter?: AdapterType | string } = {}): Promise<string[]> {
+    // 处理适配器名称
+    let adapterName: string;
+    if (options.adapter) {
+      adapterName = this.mapAdapterString(options.adapter as string);
+    } else {
+      adapterName = this.options.defaultAdapter;
+    }
+    
     const adapter = this.getAdapter(adapterName)
     const keys = await adapter.keys()
 
@@ -219,7 +386,7 @@ export class StorageManager {
    */
   async has(
     key: string,
-    options: { adapter?: AdapterType } = {}
+    options: { adapter?: AdapterType | string } = {}
   ): Promise<boolean> {
     const value = await this.get(key, options)
     return value !== undefined

@@ -3,6 +3,12 @@ src/
 tests/
 examples/
 
+# 测试目录
+test-browser/
+test-string-adapter/
+test-project/
+test-examples/
+
 # 配置文件
 .eslintrc.js
 .eslintignore

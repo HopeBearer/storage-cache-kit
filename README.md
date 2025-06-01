@@ -1,18 +1,19 @@
-# Unified Cache
+# Storage Cache Kit
 
 一个用于统一管理各种类型客户端存储和缓存的轻量级库。支持浏览器和Node.js环境。
 
 ## 目录
 
-1. [安装](#安装)
-2. [快速开始](#快速开始)
-3. [浏览器环境使用指南](#浏览器环境使用指南)
-4. [Node.js环境使用指南](#nodejs环境使用指南)
-5. [高级用法](#高级用法)
-6. [API参考](#api参考)
-7. [最佳实践](#最佳实践)
-8. [常见问题](#常见问题)
-9. [版本兼容性与功能支持](#版本兼容性与功能支持)
+1. [特性](#特性)
+2. [安装](#安装)
+3. [快速开始](#快速开始)
+4. [浏览器环境使用指南](#浏览器环境使用指南)
+5. [Node.js环境使用指南](#nodejs环境使用指南)
+6. [高级用法](#高级用法)
+7. [API参考](#api参考)
+8. [最佳实践](#最佳实践)
+9. [常见问题](#常见问题)
+10. [版本兼容性与功能支持](#版本兼容性与功能支持)
 
 ## 特性
 
@@ -29,63 +30,84 @@
 
 ```bash
 # 使用npm
-npm install @ort-fe/unified-cache
+npm install @ort-fe/storage-cache-kit
 
 # 使用yarn
-yarn add @ort-fe/unified-cache
+yarn add @ort-fe/storage-cache-kit
 
 # 使用pnpm
-pnpm add @ort-fe/unified-cache
-```
-
-### 直接在浏览器中使用（CDN）
-
-你也可以通过CDN直接在浏览器中使用：
-
-```html
-<!-- 使用unpkg -->
-<script src="https://unpkg.com/@ort-fe/unified-cache"></script>
-
-<!-- 或使用jsdelivr -->
-<script src="https://cdn.jsdelivr.net/npm/@ort-fe/unified-cache"></script>
-
-<script>
-  // 全局变量 UnifiedCache 可用
-  const { put, get, del } = UnifiedCache;
-  
-  // 使用库
-  async function example() {
-    await put('user', { name: 'John' });
-    const user = await get('user');
-    console.log(user); // { name: 'John' }
-  }
-  
-  example();
-</script>
+pnpm add @ort-fe/storage-cache-kit
 ```
 
 ## 快速开始
 
-### 简化API（推荐）
+### 浏览器环境
 
+浏览器环境默认情况下使用localStorage进行存储。如果需要使用sessionStorage，cookie, memoey请往下看。
 ```typescript
-import { put, get, del } from '@ort-fe/unified-cache';
+// 导入store对象 (推荐)
+import { store } from '@ort-fe/storage-cache-kit';
 
 // 存储数据
-await put('user', { id: 1, name: 'John' });
+await store.put('user', { id: 1, name: 'John' });
 
 // 获取数据
-const user = await get('user');
+const user = await store.get('user');
 console.log(user); // { id: 1, name: 'John' }
 
 // 删除数据
-await del('user');
+await store.del('user');
 ```
 
-### 完整API
+### Node.js环境
+
+Node.js环境支持两种模块导入方式：CommonJS (require) 和 ES Modules (import)。
+
+#### CommonJS 方式 (require)
+
+```javascript
+// 使用 CommonJS 导入方式
+const { store } = require('@ort-fe/storage-cache-kit');
+
+// 在Node.js中，自动使用内存存储
+store.put('config', { port: 3000, debug: true })
+  .then(() => store.get('config'))
+  .then(config => {
+    console.log(config); // { port: 3000, debug: true }
+  });
+
+// 使用 async/await (在异步函数内)
+async function example() {
+  await store.put('config', { port: 3000, debug: true });
+  const config = await store.get('config');
+  console.log(config); // { port: 3000, debug: true }
+}
+
+example();
+```
+
+#### ES Modules 方式 (import)
+
+```javascript
+// 使用 ES Modules 导入方式
+// 在 package.json 中设置 "type": "module" 或使用 .mjs 扩展名
+import { store } from '@ort-fe/storage-cache-kit';
+
+// 使用 async/await
+async function example() {
+  await store.put('config', { port: 3000, debug: true });
+  const config = await store.get('config');
+  console.log(config); // { port: 3000, debug: true }
+}
+
+example();
+```
+
+### 完整API (适用于两种环境)
 
 ```typescript
-import storageManager from '@ort-fe/unified-cache';
+// 导入StorageManager实例
+import storageManager from '@ort-fe/storage-cache-kit';
 
 // 存储数据
 await storageManager.set('user', { id: 1, name: 'John' });
@@ -99,14 +121,14 @@ await storageManager.remove('user');
 
 ## 浏览器环境使用指南
 
-在浏览器环境中，Unified Cache支持多种存储方式，包括localStorage、sessionStorage、cookie和内存存储。
+在浏览器环境中，Storage Cache Kit支持多种存储方式，包括localStorage、sessionStorage、cookie和内存存储。
 
 ### 默认存储（localStorage）
 
-默认情况下，Unified Cache使用localStorage作为存储方式：
+默认情况下，Storage Cache Kit使用localStorage作为存储方式：
 
 ```typescript
-import { store } from '@ort-fe/unified-cache';
+import { store } from '@ort-fe/storage-cache-kit';
 
 // 使用localStorage存储
 await store.put('preferences', { theme: 'dark', fontSize: 16 });
@@ -116,7 +138,7 @@ const preferences = await store.get('preferences');
 ### 使用不同存储适配器
 
 ```typescript
-import { store, ADAPTER_TYPES } from '@ort-fe/unified-cache';
+import { store, ADAPTER_TYPES } from '@ort-fe/storage-cache-kit';
 
 // 使用sessionStorage（会话存储，浏览器关闭后数据消失）
 await store.put('temporaryData', { id: 123 }, { 
@@ -135,10 +157,35 @@ await store.put('pageState', { scrollPosition: 350 }, {
 });
 ```
 
+### 使用字符串映射适配器
+
+从 v1.1.0 版本开始，你可以直接使用字符串来指定适配器类型，而不必导入 `ADAPTER_TYPES` 常量：
+
+```typescript
+import { store } from '@ort-fe/storage-cache-kit';
+
+// 使用字符串指定适配器类型
+await store.put('sessionData', { user: 'John' }, { adapter: 'sessionStorage' });
+await store.put('cookieData', { token: 'xyz' }, { adapter: 'cookie' });
+await store.put('memoryData', { temp: true }, { adapter: 'memory' });
+
+// 大小写不敏感
+await store.put('data', { value: 123 }, { adapter: 'LOCAL' }); // 使用localStorage
+```
+
+支持的字符串映射包括：
+
+| 字符串名称 | 对应适配器 | 别名 |
+|------------|------------|------|
+| `'localStorage'` | `ADAPTER_TYPES.LOCAL_STORAGE` | `'local'` |
+| `'sessionStorage'` | `ADAPTER_TYPES.SESSION_STORAGE` | `'session'` |
+| `'cookie'` | `ADAPTER_TYPES.COOKIE` | `'cookies'` |
+| `'memory'` | `ADAPTER_TYPES.MEMORY` | `'mem'` |
+
 ### 设置数据过期时间
 
 ```typescript
-import { store } from '@ort-fe/unified-cache';
+import { store } from '@ort-fe/storage-cache-kit';
 
 // 设置1小时后过期
 await store.put('sessionToken', 'abc123', { 
@@ -156,7 +203,7 @@ await store.put('verificationCode', '123456', {
 当使用Cookie存储时，可以通过创建自定义实例来设置更多Cookie相关选项：
 
 ```typescript
-import { SimpleStore, ADAPTER_TYPES } from '@ort-fe/unified-cache';
+import { SimpleStore, ADAPTER_TYPES } from '@ort-fe/storage-cache-kit';
 
 const cookieStore = new SimpleStore({
   defaultAdapter: ADAPTER_TYPES.COOKIE,
@@ -164,8 +211,7 @@ const cookieStore = new SimpleStore({
 });
 
 // 使用自定义Cookie存储适配器
-import { CookieStorageAdapter } from '@ort-fe/unified-cache';
-import { StorageManager } from '@ort-fe/unified-cache';
+import { CookieStorageAdapter, StorageManager } from '@ort-fe/storage-cache-kit';
 
 const cookieAdapter = new CookieStorageAdapter({
   path: '/app',
@@ -183,12 +229,38 @@ await manager.set('sensitiveData', { userId: 12345 }, { adapter: 'secureCookie' 
 
 ## Node.js环境使用指南
 
-在Node.js环境中，Unified Cache会自动检测环境并默认使用内存存储适配器。
+在Node.js环境中，Storage Cache Kit会自动检测环境并默认使用内存存储适配器。
 
 ### 基本用法
 
-```typescript
-import { store } from '@ort-fe/unified-cache';
+#### CommonJS 方式
+
+```javascript
+// 使用 CommonJS 导入
+const { store } = require('@ort-fe/storage-cache-kit');
+
+// 在Node.js中，自动使用内存存储
+store.put('serverConfig', { port: 3000, debug: true })
+  .then(() => {
+    return store.get('serverConfig');
+  })
+  .then(config => {
+    console.log(config); // { port: 3000, debug: true }
+  });
+
+// 或者在异步函数中使用
+async function example() {
+  await store.put('serverConfig', { port: 3000, debug: true });
+  const config = await store.get('serverConfig');
+  console.log(config); // { port: 3000, debug: true }
+}
+```
+
+#### ES Modules 方式
+
+```javascript
+// 使用 ES Modules 导入 (需要在 package.json 中设置 "type": "module")
+import { store } from '@ort-fe/storage-cache-kit';
 
 // 在Node.js中，自动使用内存存储
 await store.put('serverConfig', { port: 3000, debug: true });
@@ -227,7 +299,7 @@ Node.js环境中的内存存储适合以下场景：
 使用命名空间可以隔离不同模块或功能的存储数据：
 
 ```typescript
-import { SimpleStore } from '@ort-fe/unified-cache';
+import { SimpleStore } from '@ort-fe/storage-cache-kit';
 
 const userStore = new SimpleStore({ namespace: 'user' });
 const settingsStore = new SimpleStore({ namespace: 'settings' });
@@ -246,7 +318,7 @@ const settingsProfile = await settingsStore.get('profile'); // { darkMode: true 
 启用加密功能可以保护敏感数据：
 
 ```typescript
-import { SimpleStore } from '@ort-fe/unified-cache';
+import { SimpleStore } from '@ort-fe/storage-cache-kit';
 
 const secureStore = new SimpleStore({
   defaultEncrypt: true // 启用加密
@@ -259,7 +331,7 @@ await secureStore.put('creditCard', { number: '1234-5678-9012-3456', cvv: '123' 
 ### 批量操作
 
 ```typescript
-import { store } from '@ort-fe/unified-cache';
+import { store } from '@ort-fe/storage-cache-kit';
 
 // 批量存储
 const data = {
@@ -286,7 +358,7 @@ await Promise.all(keys.map(key => store.del(key)));
 你可以创建并注册自己的存储适配器：
 
 ```typescript
-import { StorageAdapter, StorageItem, StorageManager } from '@ort-fe/unified-cache';
+import { StorageAdapter, StorageItem, StorageManager } from '@ort-fe/storage-cache-kit';
 
 // 创建自定义适配器
 class MyCustomAdapter implements StorageAdapter {
@@ -446,7 +518,7 @@ try {
 // 文件系统适配器示例概念
 import fs from 'fs';
 import path from 'path';
-import { StorageAdapter, StorageItem } from '@ort-fe/unified-cache';
+import { StorageAdapter, StorageItem } from '@ort-fe/storage-cache-kit';
 
 class FileSystemAdapter implements StorageAdapter {
   private basePath: string;
@@ -491,17 +563,17 @@ await manager.set('config', { port: 3000 }, { adapter: 'file' });
 
 #### 浏览器兼容性
 
-Unified Cache库支持以下现代浏览器：
+Storage Cache Kit库支持以下现代浏览器：
 
-| 浏览器 | 最低支持版本 |
-|-------|------------|
-| Chrome | 61+ |
-| Firefox | 60+ |
-| Safari | 10.1+ |
-| Edge | 16+ |
-| Opera | 48+ |
-| iOS Safari | 10.3+ |
-| Android Browser | 76+ |
+| 浏览器          | 最低支持版本 |
+| --------------- | ------------ |
+| Chrome          | 61+          |
+| Firefox         | 60+          |
+| Safari          | 10.1+        |
+| Edge            | 16+          |
+| Opera           | 48+          |
+| iOS Safari      | 10.3+        |
+| Android Browser | 76+          |
 
 注意事项：
 - IE11不受支持，因为库使用了现代JavaScript特性
@@ -509,23 +581,23 @@ Unified Cache库支持以下现代浏览器：
 
 #### Node.js兼容性
 
-| Node.js版本 | 兼容性 |
-|------------|-------|
-| Node.js 18.x+ | 完全支持 |
-| Node.js 16.x | 支持 |
-| Node.js 14.x | 部分支持（需要使用`--harmony`标志） |
-| Node.js 12.x及以下 | 不支持 |
+| Node.js版本        | 兼容性                              |
+| ------------------ | ----------------------------------- |
+| Node.js 18.x+      | 完全支持                            |
+| Node.js 16.x       | 支持                                |
+| Node.js 14.x       | 部分支持（需要使用`--harmony`标志） |
+| Node.js 12.x及以下 | 不支持                              |
 
 ### 性能考量
 
 #### 存储大小限制
 
-| 存储类型 | 典型限制 | 备注 |
-|---------|--------|------|
-| localStorage | 5-10MB | 每个域名 |
-| sessionStorage | 5-10MB | 每个域名，每个标签页 |
-| Cookie | 4KB | 每个Cookie |
-| 内存存储 | 无硬性限制 | 受可用内存限制 |
+| 存储类型       | 典型限制   | 备注                 |
+| -------------- | ---------- | -------------------- |
+| localStorage   | 5-10MB     | 每个域名             |
+| sessionStorage | 5-10MB     | 每个域名，每个标签页 |
+| Cookie         | 4KB        | 每个Cookie           |
+| 内存存储       | 无硬性限制 | 受可用内存限制       |
 
 #### 性能优化建议
 
@@ -565,31 +637,31 @@ Unified Cache库支持以下现代浏览器：
 
 ### 本库支持功能
 
-| 功能 | 支持状态 | 说明 |
-|-----|---------|------|
-| **存储类型** |  |  |
-| localStorage | ✅ 支持 | 持久化存储，适合长期数据 |
-| sessionStorage | ✅ 支持 | 会话级存储，浏览器关闭后清除 |
-| Cookie | ✅ 支持 | 支持设置过期时间、路径、域等选项 |
-| 内存存储 | ✅ 支持 | 临时存储，页面刷新后清除 |
-| **功能特性** |  |  |
-| 过期时间控制 | ✅ 支持 | 可为任何存储项设置毫秒级过期时间 |
-| 命名空间 | ✅ 支持 | 隔离不同模块的存储数据 |
-| 数据加密 | ✅ 支持 | 基本的数据加密功能 |
-| 异步API | ✅ 支持 | 所有操作都返回Promise |
-| 类型安全 | ✅ 支持 | 完整的TypeScript类型定义 |
-| 自定义适配器 | ✅ 支持 | 可扩展自定义存储方式 |
-| **环境支持** |  |  |
-| 浏览器环境 | ✅ 支持 | 支持所有现代浏览器 |
-| Node.js环境 | ✅ 支持 | 自动适配为内存存储 |
-| 跨标签页共享 | ✅ 部分支持 | localStorage和Cookie支持 |
-| 服务端渲染(SSR) | ✅ 支持 | 自动检测环境 |
-| **开发体验** |  |  |
-| 简化API | ✅ 支持 | 提供简洁易用的方法名 |
-| 链式调用 | ❌ 不支持 | 使用Promise异步模式 |
-| 批量操作 | ✅ 支持 | 通过Promise.all实现 |
-| 事件监听 | ❌ 不支持 | 计划在未来版本添加 |
-| 存储容量检测 | ❌ 不支持 | 计划在未来版本添加 |
+| 功能            | 支持状态   | 说明                             |
+| --------------- | ---------- | -------------------------------- |
+| **存储类型**    |            |                                  |
+| localStorage    | ✅ 支持     | 持久化存储，适合长期数据         |
+| sessionStorage  | ✅ 支持     | 会话级存储，浏览器关闭后清除     |
+| Cookie          | ✅ 支持     | 支持设置过期时间、路径、域等选项 |
+| 内存存储        | ✅ 支持     | 临时存储，页面刷新后清除         |
+| **功能特性**    |            |                                  |
+| 过期时间控制    | ✅ 支持     | 可为任何存储项设置毫秒级过期时间 |
+| 命名空间        | ✅ 支持     | 隔离不同模块的存储数据           |
+| 数据加密        | ✅ 支持     | 基本的数据加密功能               |
+| 异步API         | ✅ 支持     | 所有操作都返回Promise            |
+| 类型安全        | ✅ 支持     | 完整的TypeScript类型定义         |
+| 自定义适配器    | ✅ 支持     | 可扩展自定义存储方式             |
+| **环境支持**    |            |                                  |
+| 浏览器环境      | ✅ 支持     | 支持所有现代浏览器               |
+| Node.js环境     | ✅ 支持     | 自动适配为内存存储               |
+| 跨标签页共享    | ✅ 部分支持 | localStorage和Cookie支持         |
+| 服务端渲染(SSR) | ✅ 支持     | 自动检测环境                     |
+| **开发体验**    |            |                                  |
+| 简化API         | ✅ 支持     | 提供简洁易用的方法名             |
+| 链式调用        | ❌ 不支持   | 使用Promise异步模式              |
+| 批量操作        | ✅ 支持     | 通过Promise.all实现              |
+| 事件监听        | ❌ 不支持   | 计划在未来版本添加               |
+| 存储容量检测    | ❌ 不支持   | 计划在未来版本添加               |
 
 ## 许可证
 

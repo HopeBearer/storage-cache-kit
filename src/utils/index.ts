@@ -27,7 +27,7 @@ export function serializeItem<T>(item: StorageItem<T>, shouldEncrypt: boolean = 
 /**
  * 反序列化存储项
  * @param data 序列化的字符串
- * @param isEncrypted 是否加密
+ * @param isEncrypted 是否为加密数据
  * @returns 存储项对象
  */
 export function deserializeItem<T>(data: string, isEncrypted: boolean = false): StorageItem<T> {
@@ -38,6 +38,58 @@ export function deserializeItem<T>(data: string, isEncrypted: boolean = false): 
     console.error('Failed to deserialize item:', error);
     throw new Error('Invalid storage item format');
   }
+}
+
+/**
+ * 解析存储项，兼容非标准格式
+ * @param data 存储的数据字符串
+ * @param isEncrypted 是否为加密数据
+ * @returns 标准格式的存储项或undefined
+ */
+export function parseStorageItem<T>(data: string, isEncrypted: boolean = false): StorageItem<T> | undefined {
+  if (!data) return undefined;
+  
+  // 首先尝试按照标准格式解析
+  try {
+    const parsedItem = deserializeItem<T>(data, isEncrypted);
+    // 验证是否符合标准格式
+    if (
+      parsedItem && 
+      typeof parsedItem === 'object' && 
+      'value' in parsedItem && 
+      'timestamp' in parsedItem
+    ) {
+      return parsedItem;
+    }
+  } catch (e) {
+    // 解析标准格式失败，继续处理
+    // 在调试模式下可以记录详细信息
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Item not in standard format, trying alternative parsing:', e);
+    }
+  }
+  
+  // 尝试解析为 JSON
+  let value: T;
+  try {
+    value = JSON.parse(data) as T;
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Successfully parsed as JSON:', value);
+    }
+  } catch (e) {
+    // 如果 JSON 解析失败，则使用原始字符串
+    value = data as unknown as T;
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Using raw string as value:', data);
+    }
+  }
+  
+  // 返回兼容的 StorageItem
+  return {
+    value,
+    timestamp: Date.now(),
+    expires: undefined
+  };
 }
 
 /**

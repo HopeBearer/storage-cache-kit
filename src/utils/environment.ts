@@ -35,4 +35,24 @@ export function isTestEnvironment(): boolean {
     (process.env.NODE_ENV === 'test' || 
      process.env.VITEST !== undefined)
   );
-} 
+}
+
+/**
+ * 全局警告跟踪对象
+ * 用于防止重复显示同一警告
+ */
+export const warnOnce = (() => {
+  // 保存已经显示过的警告
+  const warnings: Record<string, boolean> = {};
+  
+  /**
+   * 确保每个警告只显示一次
+   * @param message 警告消息
+   */
+  return function(message: string): void {
+    if (!warnings[message]) {
+      console.warn(message);
+      warnings[message] = true;
+    }
+  };
+})(); 

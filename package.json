@@ -1,5 +1,5 @@
 {
-  "name": "@ort-fe/unified-cache",
+  "name": "@ort-fe/storage-cache-kit",
   "version": "1.0.0",
   "description": "Unified client-side cache and storage manager with expiration control",
   "type": "module",
@@ -49,12 +49,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hopebearer/unified-cache.git"
+    "url": "git+https://github.com/hopebearer/storage-cache-kit.git"
   },
   "bugs": {
-    "url": "https://github.com/hopebearer/unified-cache/issues"
+    "url": "https://github.com/hopebearer/storage-cache-kit/issues"
   },
-  "homepage": "https://github.com/hopebearer/unified-cache#readme",
+  "homepage": "https://github.com/hopebearer/storage-cache-kit#readme",
   "devDependencies": {
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
