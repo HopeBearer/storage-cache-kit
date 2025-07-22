@@ -175,12 +175,12 @@ await store.put('data', { value: 123 }, { adapter: 'LOCAL' }); // 使用localSto
 
 支持的字符串映射包括：
 
-| 字符串名称 | 对应适配器 |
-|------------|------------|
-| `'localStorage'` | `ADAPTER_TYPES.LOCAL_STORAGE` |
+| 字符串名称         | 对应适配器                      |
+| ------------------ | ------------------------------- |
+| `'localStorage'`   | `ADAPTER_TYPES.LOCAL_STORAGE`   |
 | `'sessionStorage'` | `ADAPTER_TYPES.SESSION_STORAGE` |
-| `'cookie'` | `ADAPTER_TYPES.COOKIE` |
-| `'memory'` | `ADAPTER_TYPES.MEMORY` |
+| `'cookie'`         | `ADAPTER_TYPES.COOKIE`          |
+| `'memory'`         | `ADAPTER_TYPES.MEMORY`          |
 
 ### 设置数据过期时间
 
@@ -497,172 +497,6 @@ try {
   // 实现备用存储策略或通知用户
 }
 ```
-
-## 常见问题
-
-### 1. 存储限制是多少？
-
-- **localStorage/sessionStorage**: 通常为5MB左右（因浏览器而异）
-- **cookie**: 通常每个域名限制为4KB
-- **memory**: 受可用内存限制
-
-### 2. 数据是如何加密的？
-
-默认使用Base64编码进行简单加密，主要用于防止偶然查看，不适用于高安全性需求。如需更强的加密，建议实现自定义加密适配器。
-
-### 3. 如何在Node.js中实现持久化存储？
-
-可以实现自定义适配器，例如基于文件系统或数据库的适配器：
-
-```typescript
-// 文件系统适配器示例概念
-import fs from 'fs';
-import path from 'path';
-import { StorageAdapter, StorageItem } from '@ort-fe/storage-cache-kit';
-
-class FileSystemAdapter implements StorageAdapter {
-  private basePath: string;
-  
-  constructor(basePath: string = './storage') {
-    this.basePath = basePath;
-    if (!fs.existsSync(basePath)) {
-      fs.mkdirSync(basePath, { recursive: true });
-    }
-  }
-  
-  async setItem<T>(key: string, item: StorageItem<T>): Promise<void> {
-    const filePath = path.join(this.basePath, `${key}.json`);
-    await fs.promises.writeFile(filePath, JSON.stringify(item), 'utf8');
-  }
-  
-  // 实现其他必要方法...
-}
-
-// 使用
-const manager = new StorageManager();
-manager.registerAdapter('file', new FileSystemAdapter('./data'));
-await manager.set('config', { port: 3000 }, { adapter: 'file' });
-```
-
-### 4. 如何处理大型数据？
-
-对于大型数据，建议：
-- 分割成更小的数据块存储
-- 考虑使用IndexedDB（需实现自定义适配器）
-- 对于Node.js，使用文件系统或数据库存储
-
-### 5. 数据在不同浏览器标签页之间如何共享？
-
-- **localStorage/cookie**: 在同一域名下的所有标签页之间共享
-- **sessionStorage**: 仅在创建它的标签页中可用
-- **memory**: 仅在当前JavaScript上下文中可用
-
-## 版本兼容性与功能支持
-
-### 版本兼容性
-
-#### 浏览器兼容性
-
-Storage Cache Kit库支持以下现代浏览器：
-
-| 浏览器          | 最低支持版本 |
-| --------------- | ------------ |
-| Chrome          | 61+          |
-| Firefox         | 60+          |
-| Safari          | 10.1+        |
-| Edge            | 16+          |
-| Opera           | 48+          |
-| iOS Safari      | 10.3+        |
-| Android Browser | 76+          |
-
-注意事项：
-- IE11不受支持，因为库使用了现代JavaScript特性
-- 较旧的浏览器可能需要使用Babel和相关polyfill进行转译
-
-#### Node.js兼容性
-
-| Node.js版本        | 兼容性                              |
-| ------------------ | ----------------------------------- |
-| Node.js 18.x+      | 完全支持                            |
-| Node.js 16.x       | 支持                                |
-| Node.js 14.x       | 部分支持（需要使用`--harmony`标志） |
-| Node.js 12.x及以下 | 不支持                              |
-
-### 性能考量
-
-#### 存储大小限制
-
-| 存储类型       | 典型限制   | 备注                 |
-| -------------- | ---------- | -------------------- |
-| localStorage   | 5-10MB     | 每个域名             |
-| sessionStorage | 5-10MB     | 每个域名，每个标签页 |
-| Cookie         | 4KB        | 每个Cookie           |
-| 内存存储       | 无硬性限制 | 受可用内存限制       |
-
-#### 性能优化建议
-
-1. **数据分片**
-   - 将大型数据集分割成更小的块存储
-   - 实现懒加载机制，按需获取数据
-
-2. **缓存策略**
-   - 为频繁访问的数据实现内存缓存层
-   - 为不常变化的数据设置更长的过期时间
-
-3. **批量操作**
-   - 使用`Promise.all`进行批量读写操作
-   - 实现事务性操作，确保数据一致性
-
-4. **压缩数据**
-   - 考虑在存储前压缩大型数据
-   - 移除不必要的数据字段
-
-### 安全性考量
-
-1. **敏感数据处理**
-   - 永远不要在客户端存储未加密的敏感信息
-   - 使用强加密算法替代默认的简单加密
-
-2. **跨站脚本(XSS)防护**
-   - 存储前验证和清理所有用户输入数据
-   - 使用内容安全策略(CSP)限制脚本访问
-
-3. **Cookie安全**
-   - 使用`secure`和`httpOnly`标志
-   - 实施合适的`SameSite`策略
-
-4. **数据隔离**
-   - 使用命名空间隔离不同功能模块的数据
-   - 实现最小权限原则，限制数据访问范围
-
-### 本库支持功能
-
-| 功能            | 支持状态   | 说明                             |
-| --------------- | ---------- | -------------------------------- |
-| **存储类型**    |            |                                  |
-| localStorage    | ✅ 支持     | 持久化存储，适合长期数据         |
-| sessionStorage  | ✅ 支持     | 会话级存储，浏览器关闭后清除     |
-| Cookie          | ✅ 支持     | 支持设置过期时间、路径、域等选项 |
-| 内存存储        | ✅ 支持     | 临时存储，页面刷新后清除         |
-| **功能特性**    |            |                                  |
-| 过期时间控制    | ✅ 支持     | 可为任何存储项设置毫秒级过期时间 |
-| 命名空间        | ✅ 支持     | 隔离不同模块的存储数据           |
-| 数据加密        | ✅ 支持     | 基本的数据加密功能               |
-| 异步API         | ✅ 支持     | 所有操作都返回Promise            |
-| 类型安全        | ✅ 支持     | 完整的TypeScript类型定义         |
-| 自定义适配器    | ✅ 支持     | 可扩展自定义存储方式             |
-| **环境支持**    |            |                                  |
-| 浏览器环境      | ✅ 支持     | 支持所有现代浏览器               |
-| Node.js环境     | ✅ 支持     | 自动适配为内存存储               |
-| 跨标签页共享    | ✅ 部分支持 | localStorage和Cookie支持         |
-| 服务端渲染(SSR) | ✅ 支持     | 自动检测环境                     |
-| **开发体验**    |            |                                  |
-| 简化API         | ✅ 支持     | 提供简洁易用的方法名             |
-| 链式调用        | ❌ 不支持   | 使用Promise异步模式              |
-| 批量操作        | ✅ 支持     | 通过Promise.all实现              |
-| 事件监听        | ❌ 不支持   | 计划在未来版本添加               |
-| 存储容量检测    | ❌ 不支持   | 计划在未来版本添加               |
-
 ## 许可证
 
 MIT 
